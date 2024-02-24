@@ -74,7 +74,7 @@ userSchema.methods,
     );
   });
 
-userSchema.methods.generateRefreshAccess = function () {
+userSchema.methods.generateRefreshToken = function () {
   jwt.sign(
     {
       _id: this._id,
