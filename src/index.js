@@ -11,15 +11,12 @@ connectDB()
       console.log("server error ", err);
     });
     app.listen(process.env.PORT || 8080, () => {
-      console.log(`server is running on  port ${process.env.PORT}`);
+      console.log(`server is running on  port ${process.env.PORT} and its link is http://localhost:${process.env.PORT}`);
     });
   })
   .catch((error) => {
     console.log("mongo Db connection failed  !!!!!", error);
   });
-
-
-
 
 
 
