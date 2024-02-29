@@ -2,129 +2,25 @@ import dotenv from "dotenv";
 import connectDB from "./db/dbConnection.js";
 import { app } from "./app.js";
 dotenv.config({
-  path: "./env",
+  path: "./.env",
 });
 
+const port = process.env.PORT || 8080;
+console.log(port);
 connectDB()
   .then(() => {
     app.on("error", (err) => {
       console.log("server error ", err);
     });
-    app.listen(process.env.PORT || 8080, () => {
-      console.log(`server is running on  port ${process.env.PORT} and its link is http://localhost:${process.env.PORT}`);
+    app.listen(port, () => {
+      console.log(
+        `server is running on  port ${port} and its link is http://localhost:${port}`
+      );
     });
   })
   .catch((error) => {
     console.log("mongo Db connection failed  !!!!!", error);
   });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 
 /*
 (async () => {
