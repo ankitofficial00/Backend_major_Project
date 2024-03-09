@@ -266,4 +266,209 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, error?.message || "invalid refresh token ");
   }
 });
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+
+// change the current password
+
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid old password");
+  }
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(202, {}, "user change the password successfully !! ")
+    );
+});
+
+// get the current user
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  // find the user
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(202, req.user, "current user fetched Successfully !! ")
+    );
+});
+
+const changeAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName,
+        email,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(202, user, "Account Details updated successfully"));
+});
+
+// change the avatar file
+
+const changeUserAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "avatar file is missing ");
+  }
+
+  /// upload to cloudinary server
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatar.url) {
+    throw new ApiError(400, "Error while uploading the avatar file ");
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        avatar: avatar.url,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(202, user, "Avatar file updates successfully !!!"));
+});
+
+const changeUserCoverImage = asyncHandler(async (req, res) => {
+  const coverImageLocalPath = req.file?.path;
+  if (!coverImageLocalPath) {
+    throw new ApiError(400, "cover image file is missing ");
+  }
+
+  /// upload to cloudinary server
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+  if (!coverImage.url) {
+    throw new ApiError(400, "Error while uploading the cover Image file ");
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        coverImage: coverImage.url,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password");
+  return res
+    .status(200)
+    .json(new ApiResponse(202, user, "coverImage is updated successfully !!!"));
+});
+
+// advanced part of this project // mongo db aggregated pipeline
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const username = req.params;
+
+  if (!username?.trim()) {
+    throw new ApiError(404, "username is missing");
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
+        channelsSubscribedToCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        email: 1,
+        username: 1,
+        subscribersCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+      },
+    },
+  ]);
+
+  // log the value of channel
+  console.log(channel);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "channel does not found so try again !!");
+  }
+
+  // output of aggregation is in  array  and array contain the object
+
+  return channel; // output in array data types
+
+  // return the output in the form objects array so we can easily apply methods on the output
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(202, channel[0]),
+      "User channel Profile Fetched Successfully "
+    );
+});
+
+// now we store the watch history of the user
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  changeAccountDetails,
+  changeUserAvatar,
+  changeUserCoverImage,
+  getUserChannelProfile,
+};
