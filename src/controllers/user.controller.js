@@ -301,7 +301,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     );
 });
 
-const changeAccountDetails = asyncHandler(async (req, res) => {
+const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, email } = req.body;
 
   const user = await User.findByIdAndUpdate(
@@ -322,7 +322,7 @@ const changeAccountDetails = asyncHandler(async (req, res) => {
 
 // change the avatar file
 
-const changeUserAvatar = asyncHandler(async (req, res) => {
+const updateUserAvatar = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.file?.path;
   if (!avatarLocalPath) {
     throw new ApiError(400, "avatar file is missing ");
@@ -351,7 +351,7 @@ const changeUserAvatar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(202, user, "Avatar file updates successfully !!!"));
 });
 
-const changeUserCoverImage = asyncHandler(async (req, res) => {
+const updateUserCoverImage = asyncHandler(async (req, res) => {
   const coverImageLocalPath = req.file?.path;
   if (!coverImageLocalPath) {
     throw new ApiError(400, "cover image file is missing ");
@@ -381,7 +381,7 @@ const changeUserCoverImage = asyncHandler(async (req, res) => {
 
 // advanced part of this project // mongo db aggregated pipeline
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-  const username = req.params;
+  const { username } = req.params;
 
   if (!username?.trim()) {
     throw new ApiError(404, "username is missing");
@@ -525,9 +525,9 @@ export {
   refreshAccessToken,
   changeCurrentPassword,
   getCurrentUser,
-  changeAccountDetails,
-  changeUserAvatar,
-  changeUserCoverImage,
+  updateUserAvatar,
+  updateUserCoverImage,
+  updateAccountDetails,
   getUserChannelProfile,
   getWatchHistory,
 };
