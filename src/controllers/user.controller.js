@@ -5,6 +5,8 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 
+import mongoose from "mongoose";
+
 const registerUser = asyncHandler(async (req, res) => {
   // logic of user registered
   // get the user details from the frontend, postman
@@ -460,6 +462,62 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
 // now we store the watch history of the user
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+  // req.user._id // it not get the actual object id of mongo db data base it only contain the string that is internally converted by mongoose into object id
+
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id), // convert the normal string id into the object id
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        202,
+        user[0].watchHistory,
+        "watch history fetched successfully !!"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -471,4 +529,5 @@ export {
   changeUserAvatar,
   changeUserCoverImage,
   getUserChannelProfile,
+  getWatchHistory,
 };
